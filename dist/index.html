@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>IFC Twin Studio</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2314243a'/%3E%3Cpath d='M14 45V22l18-9 18 9v23l-18 9-18-9m18-32v41M14 22l18 9 18-9' fill='none' stroke='%2375d8e6' stroke-width='3'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="upload.css" />
+  </head>
+  <body>
+    <header>
+      <strong>IFC <span>TWIN STUDIO</span></strong>
+      <div id="filename">Browser-based model explorer</div>
+      <button id="replace" hidden>Open another IFC</button>
+    </header>
+    <main id="start">
+      <div class="intro">
+        <small>BUILDING DIGITAL TWIN</small>
+        <h1>Open your IFC model</h1>
+        <p>
+          Explore the building, inspect its elements, and connect room data.
+        </p>
+      </div>
+      <section id="drop" aria-label="IFC file upload">
+        <div class="file-icon">IFC</div>
+        <h2>Drop your model here</h2>
+        <p>or choose a file from your computer</p>
+        <button id="choose">Choose IFC file</button
+        ><input id="file" type="file" accept=".ifc" hidden />
+        <p class="metadata">IFC2X3 or IFC4 · up to 200 MB</p>
+      </section>
+      <section id="progress-panel" hidden aria-live="polite">
+        <span class="spinner"></span>
+        <h2 id="progress-text">Reading model…</h2>
+        <p>
+          Your file stays in this browser. Large models may take several
+          minutes.
+        </p>
+        <button id="cancel">Cancel</button>
+      </section>
+      <div id="error" role="alert" hidden></div>
+      <div class="capabilities">
+        <div>
+          <b>Explore</b>
+          <p>Floors, sections, element properties and enhanced materials.</p>
+        </div>
+        <div>
+          <b>Inspect spaces</b>
+          <p>
+            Room selection and heatmaps when your IFC includes space geometry.
+          </p>
+        </div>
+        <div>
+          <b>Try sensor data</b>
+          <p>Simulated readings and a per-room test input.</p>
+        </div>
+      </div>
+      <p class="privacy">
+        Models are processed locally in a browser worker. No model is uploaded
+        to a server. Models and readings are not saved when this page closes.
+      </p>
+      <footer>
+        Developed by
+        <a href="https://reachsak.github.io/" target="_blank" rel="noopener"
+          >Reachsak Ly</a
+        >
+        · Export Revit models to IFC first.
+      </footer>
+    </main>
+    <div id="model-area" hidden>
+      <details id="report" hidden>
+        <summary id="report-title">Import notes</summary>
+        <ul id="report-list"></ul>
+      </details>
+      <iframe
+        id="viewer"
+        title="Building digital twin viewer"
+        src="viewer.html"
+        hidden
+      ></iframe>
+    </div>
+    <script type="module" src="upload.mjs"></script>
+  </body>
+</html>

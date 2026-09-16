@@ -1,0 +1,3 @@
+import * as W from './vendor/web-ifc-api.js';
+import {convertIFC} from './convert.mjs';
+self.onmessage=async e=>{try{const api=new W.IfcAPI();api.SetWasmPath(new URL('./vendor/',import.meta.url).href,true);postMessage({type:'progress',text:'Starting IFC engine…'});await api.Init();const data=await convertIFC(W,api,e.data.buffer,e.data.name,text=>postMessage({type:'progress',text}));const transfer=Object.values(data.geometries).flatMap(g=>[g.vertices.buffer,g.indices.buffer]);postMessage({type:'model',data},transfer);}catch(error){postMessage({type:'error',message:error.message||'The model could not be processed.'});}};
