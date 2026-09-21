@@ -1,1 +1,0 @@
-{"name":"ifc-twin-studio","version":"1.0.0","private":true,"scripts":{"build":"node build.cjs"},"dependencies":{"three":"0.180.0","web-ifc":"0.0.75"},"devDependencies":{"esbuild":"0.25.10"}}
