@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import * as T from 'three';
+import {installTabletop} from './tabletop.js';
+const elements=new Map();globalThis.document={getElementById:id=>{if(!elements.has(id))elements.set(id,{});return elements.get(id);},createElement:()=>({getContext:()=>({fillRect(){},strokeRect(){},fillText(){}})})};
+const scene=new T.Scene(),root=new T.Group(),sky=new T.Group(),ground=new T.Group(),grid=new T.Group();scene.add(root,sky,ground,grid);root.position.set(-30,2,-20);const camera=new T.PerspectiveCamera();camera.position.set(50,50,50);const controls={enabled:true};let end,selected;
+const session={addEventListener:(k,fn)=>end=fn,requestReferenceSpace:async()=>({}),requestHitTestSource:async()=>{throw Error('unavailable');},end:async()=>end()};
+Object.defineProperty(globalThis,'navigator',{value:{xr:{isSessionSupported:async()=>true,requestSession:async()=>session}},configurable:true});
+const controllers=[new T.Group(),new T.Group()];const renderer={shadowMap:{enabled:true},getClearColor:c=>c.set(0xffffff),getClearAlpha:()=>1,setClearColor(){},xr:{getController:i=>controllers[i],setReferenceSpaceType(){},setSession:async()=>{},getReferenceSpace:()=>({})}};
+const xr=installTabletop({renderer,scene,root,sky,ground,grid,controls,getCamera:()=>camera,span:40,floors:[{id:'all',name:'Entire building'},{id:1,name:'Level 1'}],setFloor:id=>selected=id,heatmap:{},prepare(){},restore(){}});
+await elements.get('enter-ar').onclick();assert(xr.active);assert.equal(sky.visible,false);assert.equal(controls.enabled,false);assert(Math.abs(root.parent.scale.x*40-.85)<1e-9);assert.deepEqual(root.position.toArray(),[-30,2,-20]);
+xr.step({getViewerPose:()=>({transform:{position:{x:0,y:1.6,z:0},orientation:{x:0,y:0,z:0,w:1}}})});
+const panel=scene.children.find(c=>c.children.some(b=>b.userData.action));assert(panel?.visible);panel.children[2].userData.action();assert.equal(selected,1);panel.children[3].userData.action();assert(root.parent.scale.x*40<.85);
+await session.end();assert(!xr.active);assert.equal(root.parent,scene);assert.deepEqual(root.position.toArray(),[-30,2,-20]);assert.equal(controls.enabled,true);assert.equal(sky.visible,true);
+await elements.get('enter-ar').onclick();assert(xr.active);await session.end();console.log('PASS miniature size, centering preservation, floor action, scale, passthrough, restoration, reentry');
