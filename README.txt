@@ -1,8 +1,8 @@
-TwinXR BFH Tabletop v3
+TwinXR BFH Tabletop v4
 
 Upload these ZIP contents directly to your HTTPS static host. index.html is at the root. No build step required. BFH opens automatically; Open another IFC replaces it locally.
 
-In Quest Browser choose Tabletop AR. The complete model appears automatically about 85 cm across, in front of and below your eyes. A floating 3D panel provides every exported floor, entire building, scaling, rotation, height, reposition, heatmap cycle, and Exit AR. No DOM overlay is required.
+In Quest Browser choose Tabletop AR. The complete model appears automatically about 85 cm across, in front of and below your eyes. A floating 3D panel has Floors, Model, and Sensors tabs. Floors provides a two-column selector with paging; Model provides scale, rotation, height, placement and recenter controls; Sensors provides direct heatmap selection. Selected controls have teal highlights; controller/hand-ray hover highlights each button. Exit AR is always available. No DOM overlay is required.
 
 Aim either controller at a button and pull the trigger. With tracked hands, use the system hand ray and pinch (WebXR select events). Hold trigger/pinch away from buttons and move your hand to translate the model; release to stop. Controller grip also moves it. Thumbstick horizontal rotates, vertical scales. The panel has equivalent rotation/scale buttons for hands. Two-hand stretch is not implemented.
 
