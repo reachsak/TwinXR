@@ -19,9 +19,9 @@ const frame={getViewerPose:()=>({transform:{position:head,orientation:{x:0,y:0,z
 function tick(){clock+=600;xr.step(frame);}
 const launcher=scene.getObjectByName('left-palm-menu');panel.children.find(m=>m.userData.title==='Hide').userData.action();tick();assert(launcher.visible);assert(!panel.visible);
 scene.updateMatrixWorld(true);tip=launcher.getWorldPosition(new T.Vector3());tick();assert(panel.visible,'right fingertip opens palm menu');
-tip=null;tick();const before=panel.position.clone();head={x:.6,y:1.6,z:0};tick();assert(panel.position.x>before.x,'panel follows viewer');
-panel.children.find(m=>m.userData.title==='Pin panel').userData.action();const pinned=panel.position.clone();head={x:1.2,y:1.6,z:0};tick();assert.deepEqual(panel.position.toArray(),pinned.toArray());
+tip=null;tick();const before=panel.position.clone();head={x:.6,y:1.6,z:0};tick();assert.deepEqual(panel.position.toArray(),before.toArray(),'panel stationary by default');panel.children.find(m=>m.userData.title==='Move panel').userData.action();tick();assert(panel.position.x>before.x,'explicit move mode');
+panel.children.find(m=>m.userData.title==='Lock panel').userData.action();const pinned=panel.position.clone();head={x:1.2,y:1.6,z:0};tick();assert.deepEqual(panel.position.toArray(),pinned.toArray());
 scene.updateMatrixWorld(true);tip=panel.children.find(m=>m.userData.title==='Level 1').getWorldPosition(new T.Vector3());selected=null;tick();assert.equal(selected,1,'touch selects floor');tip=null;tick();
 up=false;tick();assert(!launcher.visible,'palm-down hides launcher');
 await session.end();assert(!xr.active);assert.equal(root.parent,scene);assert.deepEqual(root.position.toArray(),[-30,2,-20]);assert.equal(controls.enabled,true);assert.equal(sky.visible,true);
-await elements.get('enter-ar').onclick();assert(xr.active);await session.end();console.log('PASS initial hidden panel, palm-up launcher, right-finger touch, floor selection, follow, pin, palm-down, controller selection, session restore and reentry');
+await elements.get('enter-ar').onclick();assert(xr.active);await session.end();console.log('PASS initial hidden panel, palm-up launcher, right-finger touch, floor selection, stationary default, explicit move/lock, palm-down, controller selection, session restore and reentry');

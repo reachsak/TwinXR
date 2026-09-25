@@ -1,36 +1,26 @@
-TwinXR BFH Wrist Menu v5
-
-Deploy: upload all ZIP contents to your HTTPS static host. index.html is at root. BFH loads automatically; Open another IFC allows replacement. Editable source is included.
-
-Quest 3 workflow:
-1. Enable hand tracking and enter Tabletop AR. The model appears; the panel starts hidden.
-2. Raise your left hand palm-up. A MENU button appears just above the palm.
-3. Touch MENU with your right index finger, or aim a hand/controller ray and select.
-4. Touch panel cards or use ray + pinch/trigger. Floors, Model and Sensors retain the v4 design.
-5. The panel follows your head position and horizontal viewing direction smoothly. It pauses following when a fingertip approaches, for easier touch.
-6. Pin panel keeps it in its current world location; Follow me resumes following. Hide closes the panel. Use the palm MENU button to reopen it. The building remains independent of panel follow.
-
-Controller fallback: MENU sits above the left controller. Aim the other controller and trigger. Left primary face button also toggles the panel where mapped. If no left input exists, a small launcher appears in front-left of the viewer.
-
-Pinning lasts for the current XR session; it is not a persistent room anchor across reloads. Right-index touch includes a release latch/cooldown to avoid repeated activation. Palm-up detection uses WebXR joint -Y palm direction; absent tracking hides the hand launcher.
-
-Testing: automated synthetic WebXR poses verified hidden initial state, palm-up/down, fingertip activation, follow, pin, floor selection, controller ray actions, exit and reentry. Physical Quest 3 wrist/touch testing has not been performed here.
-
-The full original v4 guide follows for model editing/build details (panel now starts hidden):
-
-TwinXR BFH Tabletop v4
-
-Upload these ZIP contents directly to your HTTPS static host. index.html is at the root. No build step required. BFH opens automatically; Open another IFC replaces it locally.
-
-In Quest Browser choose Tabletop AR. The complete model appears automatically about 85 cm across, in front of and below your eyes. A floating 3D panel has Floors, Model, and Sensors tabs. Floors provides a two-column selector with paging; Model provides scale, rotation, height, placement and recenter controls; Sensors provides direct heatmap selection. Selected controls have teal highlights; controller/hand-ray hover highlights each button. Exit AR is always available. No DOM overlay is required.
-
-Aim either controller at a button and pull the trigger. With tracked hands, use the system hand ray and pinch (WebXR select events). Hold trigger/pinch away from buttons and move your hand to translate the model; release to stop. Controller grip also moves it. Thumbstick horizontal rotates, vertical scales. The panel has equivalent rotation/scale buttons for hands. Two-hand stretch is not implemented.
-
-Place on surface is optional: look toward a detected surface, then trigger/pinch away from the panel to confirm the ring location. Otherwise the model remains visible in free space. Recenter moves the model and panel back in front of you.
-
-Floors use IFC spatial assignments. Heatmaps require usable IFC spaces. Simulated readings are not live sensor measurements. Enhanced finishes are illustrative.
-
-Validation: bundled build and automated session/transform/floor/scale/exit/reentry tests passed. Physical Quest 3 and hand tracking were not hardware-tested here.
-
-Editable source is in source/. npm install then npm run build rebuilds source/dist/viewer.html; copy that viewer.html to the deployment root. Other deployment files are authored directly.
+CognitiveTwinXR — BFH + Groq Assistant v6
 Developed by Reachsak Ly — https://reachsak.github.io/
+
+DEPLOY
+Upload the contents of this ZIP to your HTTPS static host. index.html is at root; no build needed. BFH loads by default. Open another IFC processes a replacement locally. Serve over HTTP for local desktop testing: python3 -m http.server 8080. XR needs a supported HTTPS device/browser.
+
+WRIST MENU
+Panel starts hidden. Palm-up left hand exposes MENU. Tap with right index or use ray/select. Panel remains fixed by default and stays there when hidden/reopened. Move panel enables temporary head-relative repositioning; Lock panel fixes it again. Other building, floor and sensor controls remain. World placement lasts for the current session.
+
+WEB AI ASSISTANT (not inside immersive AR)
+Click Ask CognitiveTwinXR. Groq model & connection lets you refresh available account models and select or type a model ID. Select a text/chat model that supports function calling; the endpoint can also list unsuitable audio/other models. Default: openai/gpt-oss-20b, subject to account availability.
+The supplied test API key is embedded in index.html as requested. Static browser code cannot hide this key. You can replace the key in the connection field for the current session or edit index.html for deployment.
+Only when you ask a question, the assistant sends chat and selected IFC tool results to Groq. It does not send mesh geometry. Properties and room readings can be included. Expanded Evidence entries show the exact local tool outputs. No backend server is required. Groq usage/rate limits apply.
+
+QUERY TOOLS
+Overview: actual exported floors, category counts and per-floor counts.
+Elements: exact counts, filter by category/floor/ID/text, paginated results and optional exported properties.
+Sensors: room-filtered snapshots, timestamps, source, stale flag, and units.
+Examples: How many doors/windows on Level 2? List the floors. What properties exist for element 123? What is the temperature in room X? Which materials are documented for this wall?
+The assistant is read-only; no equipment or model modifications. Data not exported cannot be answered reliably. Visual material presets are inferred and are not actual material specifications. Sensor readings are simulated unless external readings have been supplied. AI output can be wrong; check the evidence.
+
+SOURCE
+source/ includes viewer sources, tests and build config. npm install and npm run build within source rebuilds source/dist/viewer.html (directory included). Copy that file to deployment root. assistant.mjs, query-tools.mjs, assistant.css and other root loading files are editable directly. Tests expect dist/model.json; copy the root model.json there to run test-query.mjs.
+
+VALIDATION
+Build/syntax checks and synthetic XR tests passed. BFH per-floor door/window counts, pagination, unknown floor rejection and room readings were checked. Physical Quest 3 and browser-to-Groq CORS behavior require on-device verification.
