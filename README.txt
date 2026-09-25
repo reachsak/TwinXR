@@ -1,3 +1,23 @@
+TwinXR BFH Wrist Menu v5
+
+Deploy: upload all ZIP contents to your HTTPS static host. index.html is at root. BFH loads automatically; Open another IFC allows replacement. Editable source is included.
+
+Quest 3 workflow:
+1. Enable hand tracking and enter Tabletop AR. The model appears; the panel starts hidden.
+2. Raise your left hand palm-up. A MENU button appears just above the palm.
+3. Touch MENU with your right index finger, or aim a hand/controller ray and select.
+4. Touch panel cards or use ray + pinch/trigger. Floors, Model and Sensors retain the v4 design.
+5. The panel follows your head position and horizontal viewing direction smoothly. It pauses following when a fingertip approaches, for easier touch.
+6. Pin panel keeps it in its current world location; Follow me resumes following. Hide closes the panel. Use the palm MENU button to reopen it. The building remains independent of panel follow.
+
+Controller fallback: MENU sits above the left controller. Aim the other controller and trigger. Left primary face button also toggles the panel where mapped. If no left input exists, a small launcher appears in front-left of the viewer.
+
+Pinning lasts for the current XR session; it is not a persistent room anchor across reloads. Right-index touch includes a release latch/cooldown to avoid repeated activation. Palm-up detection uses WebXR joint -Y palm direction; absent tracking hides the hand launcher.
+
+Testing: automated synthetic WebXR poses verified hidden initial state, palm-up/down, fingertip activation, follow, pin, floor selection, controller ray actions, exit and reentry. Physical Quest 3 wrist/touch testing has not been performed here.
+
+The full original v4 guide follows for model editing/build details (panel now starts hidden):
+
 TwinXR BFH Tabletop v4
 
 Upload these ZIP contents directly to your HTTPS static host. index.html is at the root. No build step required. BFH opens automatically; Open another IFC replaces it locally.
