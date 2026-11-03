@@ -1,0 +1,21 @@
+CognitiveTwinXR v11 — Tabletop control panel
+
+Deploy all extracted contents with index.html at the deployment root.
+Use HTTPS and refresh the page after deployment.
+
+The tabletop panel now opens automatically alongside the building.
+Floors, Model, Sensors (heatmaps), Devices and AI chat remain available.
+
+Move the panel: point a controller at any part of the panel, hold its grip
+button, then move or turn the controller. Release grip to leave the panel
+in place. Trigger clicks still activate buttons. You can also drag unused
+panel background with the trigger. The panel stays where placed as you
+move your head. Model manipulation continues independently.
+
+Move panel / Lock panel remain available for look-to-place positioning.
+If you hide the panel, the left-palm MENU can reopen it.
+
+Checks passed: automatic panel startup and reentry, controller panel
+translation/rotation independent of the building, equipment controls,
+floor/sensor/AI menus, model gestures and session restoration.
+No physical headset was available for tracking/ergonomics testing.
