@@ -1,0 +1,24 @@
+CognitiveTwinXR Equipment + Tabletop v10
+
+Deploy: extract this ZIP and upload its contents together. index.html must be
+at the deployment root. Keep vendor/, model.json and all supporting files.
+Use HTTPS and open index.html. Hard-refresh after replacing an older version.
+
+Browser: choose Room equipment. Click a device model to open its settings.
+Adjust its 0-10 level or turn it on/off. Readings and effects are simulations.
+
+Tabletop AR: Room 110 opens automatically with ghosted building surfaces.
+Point at a device and pinch (or use a controller trigger) to open Devices.
+The selected device has a dot. Its main card toggles power; +/- adjusts level.
+The left-palm MENU also opens the Devices and Model tabs.
+
+Point at the building and hold a pinch with one hand to move it; turn your
+hand to rotate it. Add a second held pinch aimed at the building, then spread
+or bring hands together to scale; turn the line between hands to rotate.
+Release to stop. Controller grips use the same manipulation system.
+Model tab buttons and controller sticks remain available as alternatives.
+
+Checks: equipment state tests, tabletop panel tests, direct device ray
+selection, one-hand translation/rotation, two-hand scaling/rotation, and
+session restoration passed. Build completed. No physical headset test was
+available; browser visual testing was unavailable in this environment.

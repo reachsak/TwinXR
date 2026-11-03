@@ -5,6 +5,7 @@ export function installEquipment({root,rooms,invalidate,getFloor,focusRoom,isXR}
  const ui=document.getElementById('equipment-panel'),launch=document.getElementById('equipment-open');
  const state=createEquipmentState(!!room,changed);let demoOpen=false,lastTime=0;
  const readings={temperature:24.5,lux:80,pm25:28,humidity:36};
+ const picks=[];let selectedDevice=null;
  const visual={},localBox=room?.box.clone().translate(root.position.clone().negate());
  const mat=(color,other={})=>new T.MeshStandardMaterial({color,roughness:.4,metalness:.15,...other});
  function mesh(parent,geometry,material,x=0,y=0,z=0){const m=new T.Mesh(geometry,material);m.position.set(x,y,z);parent.add(m);return m;}
@@ -42,6 +43,7 @@ export function installEquipment({root,rooms,invalidate,getFloor,focusRoom,isXR}
    if(id!=='light')for(let n=0;n<18;n++){
     const p=mesh(effects,id==='ac'?new T.BoxGeometry(.025,.025,.22):new T.SphereGeometry(id==='purifier'?.045:.075,8,6),new T.MeshBasicMaterial({color:id==='ac'?0x55ccff:id==='purifier'?0x7af5c8:0xd6f6ff,transparent:true,opacity:.55,depthWrite:false}));p.userData.phase=n/18;
    }
+   g.traverse(o=>{if(o.isMesh&&!effects.children.includes(o)&&o!==pool){o.userData.equipment=id;picks.push(o);}});
    label(g,deviceNames[id],id==='light'?2.15:1.8);visual[id]={g,signal,effects,bulb,fan,light,pool,lightRange:light?.distance};
   });
   launch.onclick=focus;
@@ -55,6 +57,7 @@ export function installEquipment({root,rooms,invalidate,getFloor,focusRoom,isXR}
  document.getElementById('equipment-all-off').onclick=()=>state.control({room:'110',device:'all',action:'off'});
  document.getElementById('equipment-demo').onclick=()=>state.control({room:'110',device:'all',action:'set',level:7});
  document.getElementById('equipment-close').onclick=()=>{demoOpen=false;ui.hidden=true;room&&(room.mat.opacity=.36);invalidate();};
+ function choose(id){selectedDevice=id;focus();for(const [key] of Object.entries(deviceNames)){const card=document.getElementById('eq-'+key).parentElement;card.style.outline=key===id?'2px solid #1baf92':'';}document.getElementById('eq-'+id).focus();}
  function focus(){if(!room)return;demoOpen=true;focusRoom(room);ui.hidden=false;document.getElementById('details').scrollTop=0;room.mat.opacity=.045;changed();}
  function changed(){
   for(const [id,v]of Object.entries(visual)){const level=state.levels[id],on=level>0;v.signal.color.set(on?0x43dba4:0x141a20);v.signal.emissive.set(on?0x14bd7d:0);v.signal.emissiveIntensity=on?.6:0;v.effects.visible=on;
@@ -76,5 +79,5 @@ export function installEquipment({root,rooms,invalidate,getFloor,focusRoom,isXR}
   if(group.visible&&Object.values(levels).some(Boolean))invalidate();
  }
  changed();
- return {focus,step,get:()=>({...state.snapshot(),demoReadings:{...readings,source:'equipment simulation',note:'Illustrative response, not measured performance or real telemetry.'}}),control:a=>{const result=state.control(a);if(!demoOpen||getFloor()!==room.el.floor)focus();return {...result,demoReadings:{...readings}};}};
+ return {focus,choose,picks,step,get:()=>({...state.snapshot(),demoReadings:{...readings,source:'equipment simulation',note:'Illustrative response, not measured performance or real telemetry.'}}),control:a=>{const result=state.control(a);if(!demoOpen||getFloor()!==room.el.floor)focus();return {...result,demoReadings:{...readings}};}};
 }

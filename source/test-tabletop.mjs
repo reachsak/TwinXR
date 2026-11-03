@@ -9,7 +9,8 @@ const scene=new T.Scene(),root=new T.Group(),sky=new T.Group(),ground=new T.Grou
 const session={addEventListener:(k,fn)=>end=fn,requestReferenceSpace:async()=>({}),requestHitTestSource:async()=>{throw Error('unavailable');},end:async()=>end()};
 Object.defineProperty(globalThis,'navigator',{value:{xr:{isSessionSupported:async()=>true,requestSession:async()=>session}},configurable:true});
 const controllers=[new T.Group(),new T.Group()];const renderer={shadowMap:{enabled:true},getClearColor:c=>c.set(0xffffff),getClearAlpha:()=>1,setClearColor(){},xr:{getController:i=>controllers[i],setReferenceSpaceType(){},setSession:async()=>{},getReferenceSpace:()=>({})}};
-const xr=installTabletop({renderer,scene,root,sky,ground,grid,controls,getCamera:()=>camera,span:40,floors:[{id:'all',name:'Entire building'},{id:1,name:'Level 1'}],setFloor:id=>selected=id,heatmap:{options:[{textContent:"No heatmap"},{textContent:"Temperature"}],selectedIndex:0,dispatchEvent(){}},prepare(){},restore(){}});
+let pickedDevice=null;const deviceMesh=new T.Mesh(new T.BoxGeometry(.1,.1,.1),new T.MeshBasicMaterial());deviceMesh.userData.equipment='purifier';deviceMesh.position.set(10,1,-1);scene.add(deviceMesh);const eqPicker={picks:[deviceMesh],choose:id=>pickedDevice=id};
+const xr=installTabletop({equipment:eqPicker,renderer,scene,root,sky,ground,grid,controls,getCamera:()=>camera,span:40,floors:[{id:'all',name:'Entire building'},{id:1,name:'Level 1'}],setFloor:id=>selected=id,heatmap:{options:[{textContent:"No heatmap"},{textContent:"Temperature"}],selectedIndex:0,dispatchEvent(){}},prepare(){},restore(){}});
 await elements.get('enter-ar').onclick();assert(xr.active);assert.equal(sky.visible,false);assert.equal(controls.enabled,false);assert(Math.abs(root.parent.scale.x*40-.85)<1e-9);assert.deepEqual(root.position.toArray(),[-30,2,-20]);
 xr.step({getViewerPose:()=>({transform:{position:{x:0,y:1.6,z:0},orientation:{x:0,y:0,z:0,w:1}}})});
 const panel=scene.children.find(c=>c.children.some(b=>b.userData.action));assert.equal(panel?.visible,false);scene.getObjectByName('left-palm-menu').userData.action();assert(panel.visible);function click(title){const m=panel.children.find(m=>m.userData.title===title);assert(m,title);scene.updateMatrixWorld(true);const target=m.getWorldPosition(new T.Vector3());controllers[0].position.copy(target).add(new T.Vector3(0,0,1).applyQuaternion(panel.quaternion));controllers[0].quaternion.copy(panel.quaternion);controllers[0].dispatchEvent({type:'selectstart'});controllers[0].dispatchEvent({type:'selectend'});}
@@ -29,5 +30,21 @@ scene.updateMatrixWorld(true);tip=panel.children.find(m=>m.userData.title==='Lev
 // Touch an AI keyboard key after opening AI tab by controller.
 panel.children.find(m=>m.userData.title==='AI chat').userData.action();scene.updateMatrixWorld(true);tip=panel.children.find(m=>m.userData.title==='q').getWorldPosition(new T.Vector3());tick();tip=null;tick();panel.children.find(m=>m.userData.title==='Send').userData.action();await new Promise(r=>setTimeout(r,0));assert.equal(asked,'q','fingertip keyboard submits through shared assistant');
 up=false;tick();assert(!launcher.visible,'palm-down hides launcher');
+// Controller grips exercise the same transform engine as tracked-hand pinches.
+tip=null;session.inputSources=[];clock+=1000;
+controllers[0].position.set(-.2,1,-1);controllers[1].position.set(.2,1,-1);
+controllers[0].dispatchEvent({type:'squeezestart'});tick();
+const grabPosition=root.parent.position.clone();controllers[0].position.x+=.1;tick();
+assert(Math.abs(root.parent.position.x-grabPosition.x-.1)<1e-8,'one hand translates model');
+controllers[0].quaternion.setFromAxisAngle(new T.Vector3(0,1,0),.3);tick();
+assert(root.parent.quaternion.angleTo(new T.Quaternion())>0,'one hand rotates model');
+controllers[1].dispatchEvent({type:'squeezestart'});tick();const oldScale=root.parent.scale.x;
+controllers[0].position.x-=.1;controllers[1].position.x+=.1;tick();
+assert(root.parent.scale.x>oldScale,'two hands enlarge model');
+const beforeTurn=root.parent.quaternion.clone();controllers[1].position.z+=.2;tick();assert(root.parent.quaternion.angleTo(beforeTurn)>.01,'two hands rotate model');
+controllers[0].dispatchEvent({type:'squeezeend'});controllers[1].dispatchEvent({type:'squeezeend'});
+// Point directly at a device: open its in-world settings, without grabbing.
+panel.visible=false;scene.getObjectByName('left-palm-menu').visible=false;controllers[0].position.set(10,1,0);controllers[0].quaternion.identity();scene.updateMatrixWorld(true);clock+=1000;controllers[0].dispatchEvent({type:'selectstart'});assert.equal(pickedDevice,'purifier');assert(panel.visible);assert(panel.children.some(m=>m.userData.title?.includes('● Air purifier')));controllers[0].dispatchEvent({type:'selectend'});
+
 await session.end();assert(!xr.active);assert.equal(root.parent,scene);assert.deepEqual(root.position.toArray(),[-30,2,-20]);assert.equal(controls.enabled,true);assert.equal(sky.visible,true);
 await elements.get('enter-ar').onclick();assert(xr.active);await session.end();console.log('PASS initial hidden panel, palm-up launcher, right-finger touch, floor selection, stationary default, explicit move/lock, palm-down, controller selection, session restore and reentry');
