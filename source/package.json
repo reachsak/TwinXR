@@ -1,1 +1,19 @@
-{"name":"ifc-twin-studio","version":"1.0.0","private":true,"scripts":{"build":"node build.cjs"},"dependencies":{"three":"0.180.0","web-ifc":"0.0.75"},"devDependencies":{"esbuild":"0.25.10"}}
+{
+  "name": "ifc-twin-studio",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node build.cjs",
+    "build:voice": "node build-voice.cjs"
+  },
+  "dependencies": {
+    "three": "0.180.0",
+    "web-ifc": "0.0.75",
+    "@huggingface/transformers": "3.8.1",
+    "kokoro-js": "1.2.1",
+    "onnxruntime-web": "1.22.0-dev.20250409-89f8206ba4"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.10"
+  }
+}

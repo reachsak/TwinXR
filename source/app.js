@@ -1,3 +1,4 @@
+import { installEquipment } from './equipment.js';
 import { installTabletop } from './tabletop.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -142,12 +143,19 @@ renderer.domElement.addEventListener('pointerup',e=>{if(!down||down.button!==0||
 window.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName))return;if(e.key.toLowerCase()==='f')fit();if(e.key==='Escape')select(null);});
 function resize(){const width=renderer.domElement.parentElement.clientWidth,height=renderer.domElement.parentElement.clientHeight;renderer.setSize(width,height,false);if(camera.isPerspectiveCamera)camera.aspect=width/height;else{const half=camera.top;camera.left=-half*width/height;camera.right=half*width/height;}camera.updateProjectionMatrix();invalidate();}
 
-spaceTools=installSpaceTools({data,root,geom,clipping,invalidate,getFloor:()=>floor,addProperty,openRoom:r=>{select(null);floor=r.el.floor||'all';category='all';query='';hidden.clear();isolated=null;$('category').value='all';$('search').value='';$('cumulative').checked=false;$('section').checked=true;const cut=Math.min(maxHeight,r.box.min.y+1.5);$('height').value=cut/maxHeight*1000;updateSection();applyFilters();fit();}});
-window.cognitiveTwin={snapshot:()=>({name:data.name,floors:data.floors,elements:[...data.elements,...data.spaces].map(({parts,...e})=>e),readings:window.ifcTwin?.getReadings()||[],timestamp:Date.now()})};
+spaceTools=installSpaceTools({data,root,geom,clipping,invalidate,getFloor:()=>floor,addProperty,openRoom:r=>{select(null);floor=r.el.floor||'all';category='all';query='';hidden.clear();isolated=null;$('category').value='all';$('search').value='';$('cumulative').checked=false;$('section').checked=true;const cut=Math.min(maxHeight,r.box.min.y+1.5);$('height').value=cut/maxHeight*1000;updateSection();applyFilters();if(!renderer.xr.isPresenting)fit();}});
+const equipment=installEquipment({root,rooms:spaceTools.rooms,invalidate,getFloor:()=>floor,isXR:()=>renderer.xr.isPresenting,focusRoom:r=>{
+ spaceTools.open(r.el.guid);
+ if(!renderer.xr.isPresenting){if(view!=='iso')setView('iso');const c=r.box.getCenter(new THREE.Vector3()),s=r.box.getSize(new THREE.Vector3());c.y=r.box.min.y+.8;controls.target.copy(c);const distance=Math.max(s.x,s.z)*1.35;camera.position.copy(c).add(new THREE.Vector3(distance*.72,distance*.95,distance*.86));camera.lookAt(c);controls.update();}
+ else{$('section').checked=false;updateSection();}
+ invalidate();
+}});
+spaceTools.setSimulationTransform(r=>{const eq=equipment.get();if(r.spaceId!==eq.spaceId||!eq.available)return r;return {...r,temperature:eq.demoReadings.temperature,lux:eq.demoReadings.lux,pm25:eq.demoReadings.pm25,humidity:eq.demoReadings.humidity,equipmentSimulation:true};});
+window.cognitiveTwin={getEquipment:equipment.get,controlEquipment:equipment.control,focusEquipment:equipment.focus,snapshot:()=>({name:data.name,floors:data.floors,elements:[...data.elements,...data.spaces].map(({parts,...e})=>e),readings:window.ifcTwin?.getReadings()||[],timestamp:Date.now()})};
 document.title=data.name+' · CognitiveTwinXR';$('building-name').textContent=data.name;$('overview-levels').textContent=data.floors.length;$('overview-spaces').textContent=data.spaces.length;$('source-summary').textContent=data.name+' · '+data.floors.length+' levels · '+data.elements.length.toLocaleString()+' elements · '+data.spaces.length+' spaces';
 $('about-open').onclick=()=>$('about').showModal();
 const xr=installTabletop({renderer,scene,root,sky,ground,grid,controls,getCamera:()=>camera,span,floors,heatmap:$('heatmap'),prepare:()=>{if(view!=='iso')setView('iso');$('section').checked=false;updateSection();},restore:()=>{fit();refreshShadows();},setFloor:id=>{floor=id;isolated=null;category='all';query='';hidden.clear();$('cumulative').checked=false;$('section').checked=false;updateSection();select(null);applyFilters();}});
-new ResizeObserver(resize).observe(renderer.domElement.parentElement);resize();lightingPreset();applyFilters();fit();$('model-summary').textContent=`${data.floors.length} levels · ${data.elements.length.toLocaleString()} elements`;$('loading').remove();parent.postMessage({type:'viewer-loaded'},location.origin);renderer.setAnimationLoop((now,frame)=>{spaceTools.step(now);xr.step(frame);const changed=xr.active?false:controls.update();if(changed||frameDirty||xr.active){renderer.render(scene,camera);frameDirty=false;}});
+new ResizeObserver(resize).observe(renderer.domElement.parentElement);resize();lightingPreset();applyFilters();fit();$('model-summary').textContent=`${data.floors.length} levels · ${data.elements.length.toLocaleString()} elements`;$('loading').remove();parent.postMessage({type:'viewer-loaded'},location.origin);renderer.setAnimationLoop((now,frame)=>{spaceTools.step(now);equipment.step(now);xr.step(frame);const changed=xr.active?false:controls.update();if(changed||frameDirty||xr.active){renderer.render(scene,camera);frameDirty=false;}});
 renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();$('visible-count').textContent='Graphics context lost. Reload this file to resume.';});
 }
 let opened=false;

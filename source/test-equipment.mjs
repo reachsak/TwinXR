@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {createEquipmentState,executeEquipmentTool} from '../equipment-state.mjs';
+import {createSensors} from './sensors.mjs';
+const s=createEquipmentState(),t={getEquipment:s.snapshot,controlEquipment:s.control};
+assert(s.snapshot().devices.every(d=>!d.on));
+executeEquipmentTool(t,'control_equipment',{room:'110',device:'all',action:'set',level:7});
+assert(s.snapshot().devices.every(d=>d.level===7));
+s.control({room:'110',device:'ac',action:'off'});s.control({room:'110',device:'ac',action:'on'});assert.equal(s.levels.ac,7);
+s.control({room:'110',device:'light',action:'set',level:0});assert.equal(s.levels.light,0);
+for(const a of [{room:'111',device:'ac',action:'off'},{room:'110',device:'fan',action:'on'},{room:'110',device:'ac',action:'set',level:11},{room:'110',device:'ac',action:'set',level:2.5}])assert.throws(()=>s.control(a));
+assert.throws(()=>createEquipmentState(false).control({room:'110',device:'ac',action:'on'}));
+const sensors=createSensors([{id:'room',capacity:4}]);sensors.setSimulationTransform(r=>({...r,temperature:19}));sensors.step(2);assert.equal(sensors.readings.get('room').temperature,19);sensors.ingest({spaceId:'room',temperature:27,co2:600,lux:100,occupancy:1});sensors.step(2);assert.equal(sensors.readings.get('room').temperature,27);
+console.log('PASS: on/off, all devices, last level, zero/off, invalid commands, replacement model protection, external sensor preservation');

@@ -1,26 +1,38 @@
-CognitiveTwinXR — BFH + Groq Assistant v6
-Developed by Reachsak Ly — https://reachsak.github.io/
+CognitiveTwinXR Room 110 Equipment v9
+Read ROOM-110-START-HERE.md for this update, deployment and examples.
 
-DEPLOY
-Upload the contents of this ZIP to your HTTPS static host. index.html is at root; no build needed. BFH loads by default. Open another IFC processes a replacement locally. Serve over HTTP for local desktop testing: python3 -m http.server 8080. XR needs a supported HTTPS device/browser.
+Prior version notes (retained for background):
+CognitiveTwinXR BFH — Local Voice v8
 
-WRIST MENU
-Panel starts hidden. Palm-up left hand exposes MENU. Tap with right index or use ray/select. Panel remains fixed by default and stays there when hidden/reopened. Move panel enables temporary head-relative repositioning; Lock panel fixes it again. Other building, floor and sensor controls remain. World placement lasts for the current session.
+DEPLOY: Extract this ZIP and upload its contents to your HTTPS static host.
+index.html is at the root. No build step or separate backend is needed.
+Default BFH geometry and replacement IFC uploads are included.
 
-WEB AI ASSISTANT (not inside immersive AR)
-Click Ask CognitiveTwinXR. Groq model & connection lets you refresh available account models and select or type a model ID. Select a text/chat model that supports function calling; the endpoint can also list unsuitable audio/other models. Default: openai/gpt-oss-20b, subject to account availability.
-The supplied test API key is embedded in index.html as requested. Static browser code cannot hide this key. You can replace the key in the connection field for the current session or edit index.html for deployment.
-Only when you ask a question, the assistant sends chat and selected IFC tool results to Groq. It does not send mesh geometry. Properties and room readings can be included. Expanded Evidence entries show the exact local tool outputs. No backend server is required. Groq usage/rate limits apply.
+SYSTEM PROMPT: Edit ai-config.js beside index.html. Reload after changing it.
+The prompt applies to both webpage and AR chat. For temporary changes, open
+webpage chat > System prompt. Reset returns to the ai-config.js default.
+Retain grounding/sensor-source instructions if you want evidence-based answers.
+Groq model and API key settings on the webpage also apply in AR.
+The previously authorized test key remains embedded in index.html and is public.
 
-QUERY TOOLS
-Overview: actual exported floors, category counts and per-floor counts.
-Elements: exact counts, filter by category/floor/ID/text, paginated results and optional exported properties.
-Sensors: room-filtered snapshots, timestamps, source, stale flag, and units.
-Examples: How many doors/windows on Level 2? List the floors. What properties exist for element 123? What is the temperature in room X? Which materials are documented for this wall?
-The assistant is read-only; no equipment or model modifications. Data not exported cannot be answered reliably. Visual material presets are inferred and are not actual material specifications. Sensor readings are simulated unless external readings have been supplied. AI output can be wrong; check the evidence.
+AR CHAT: Enter Tabletop AR, turn the left palm up, select MENU, then AI chat.
+Use controller ray + trigger/pinch or right index fingertip to press keys.
+The virtual keyboard includes letters, numbers, Shift, Space and Delete.
+Send submits; Stop cancels. Back/Next pages through the latest question/answer.
+Ask about this floor prepares a question using your selected floor.
+Webpage and AR share conversation context. Full chat and tool evidence are on
+webpage. Hide retains the panel location; Move panel / Lock panel repositions it.
+The panel stays stationary by default. It does not follow the user.
 
-SOURCE
-source/ includes viewer sources, tests and build config. npm install and npm run build within source rebuilds source/dist/viewer.html (directory included). Copy that file to deployment root. assistant.mjs, query-tools.mjs, assistant.css and other root loading files are editable directly. Tests expect dist/model.json; copy the root model.json there to run test-query.mjs.
+See VOICE-README.txt for the new local voice controls and validation.
 
-VALIDATION
-Build/syntax checks and synthetic XR tests passed. BFH per-floor door/window counts, pagination, unknown floor rejection and room readings were checked. Physical Quest 3 and browser-to-Groq CORS behavior require on-device verification.
+VALIDATION: Synthetic controller/fingertip keyboard submission, stationary
+panel, floor selection, shared assistant tool execution and editable prompt
+checks passed. Actual Quest 3 hardware testing has not been performed.
+
+SOURCE: Authored viewer files are in source/. Install source/package.json
+and esbuild to rebuild with node build.cjs. Copy source/dist/viewer.html to
+root after building. Root assistant.mjs, ai-config.js, query-tools.mjs, and
+CSS are directly editable; no build needed. Tests in source/ use Node.
+Sensor readings are simulated unless explicitly provided through the test input.
+Only IFC information exported into the viewer is available to the assistant.
