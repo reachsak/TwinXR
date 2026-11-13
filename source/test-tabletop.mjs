@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import {createEquipmentState} from '../equipment-state.mjs';
 import * as T from 'three';
 import {installTabletop} from './tabletop.js';
-const elements=new Map();globalThis.document={getElementById:id=>{if(!elements.has(id))elements.set(id,{});return elements.get(id);},createElement:()=>({getContext:()=>({fillRect(){},strokeRect(){},fillText(){},clearRect(){},beginPath(){},roundRect(){},fill(){},arc(){},measureText(t){return {width:t.length*12}}})})};
+const elements=new Map();globalThis.document={getElementById:id=>{if(!elements.has(id))elements.set(id,{});return elements.get(id);},createElement:()=>({getContext:()=>({save(){},restore(){},rect(){},clip(){},fillRect(){},strokeRect(){},fillText(){},clearRect(){},beginPath(){},roundRect(){},fill(){},arc(){},measureText(t){return {width:t.length*12}}})})};
 let asked='',rev=0;globalThis.window={parent:{CognitiveAssistant:{state:()=>({busy:false,revision:rev,messages:asked?[{role:'assistant',text:'There are 12 doors.'}]:[]}),ask:async q=>{asked=q;rev++;return 'There are 12 doors.';},stop(){},clear(){asked='';rev++;}}}};
-let voiceAction='',voiceState={ready:false,revision:0,transcriptId:0,status:'Voice off'};window.parent.CognitiveVoice={state:()=>({...voiceState}),enable(){voiceAction='enable';},toggle(){voiceAction='talk';},speakLatest(){voiceAction='read';},stop(){voiceAction='stop';},toggleAuto(){voiceAction='auto';}};
+let voiceAction='',voiceState={ready:true,revision:0,status:'Ready'};
+window.parent.CognitiveVoice={state:()=>({...voiceState}),prewarm(){voiceAction='warm';},cancelTurn(){},async toggle(callback,options){assert(options.automatic);await callback('List the floors');},async speak(text){voiceAction=text;}};
 const scene=new T.Scene(),root=new T.Group(),sky=new T.Group(),ground=new T.Group(),grid=new T.Group();scene.add(root,sky,ground,grid);root.position.set(-30,2,-20);const camera=new T.PerspectiveCamera();camera.position.set(50,50,50);const controls={enabled:true};let end,selected;
 const session={addEventListener:(k,fn)=>end=fn,requestReferenceSpace:async()=>({}),requestHitTestSource:async()=>{throw Error('unavailable');},end:async()=>end()};
 Object.defineProperty(globalThis,'navigator',{value:{xr:{isSessionSupported:async()=>true,requestSession:async()=>session}},configurable:true});
@@ -15,7 +16,16 @@ await elements.get('enter-ar').onclick();assert(xr.active);assert.equal(sky.visi
 xr.step({getViewerPose:()=>({transform:{position:{x:0,y:1.6,z:0},orientation:{x:0,y:0,z:0,w:1}}})});
 const panel=scene.children.find(c=>c.children.some(b=>b.userData.action));assert.equal(panel?.visible,true,'panel opens alongside model at startup');function click(title){const m=panel.children.find(m=>m.userData.title===title);assert(m,title);scene.updateMatrixWorld(true);const target=m.getWorldPosition(new T.Vector3());controllers[0].position.copy(target).add(new T.Vector3(0,0,1).applyQuaternion(panel.quaternion));controllers[0].quaternion.copy(panel.quaternion);controllers[0].dispatchEvent({type:'selectstart'});controllers[0].dispatchEvent({type:'selectend'});}
 click('Level 1');assert.equal(selected,1);click('Model');click('− Smaller');assert(root.parent.scale.x*40<.85);click('Sensors');click('Temperature');click('Floors');assert(panel.children.some(m=>m.userData.title==='Level 1'));
-const equipment=createEquipmentState();window.cognitiveTwin={getEquipment:equipment.snapshot,controlEquipment:equipment.control,focusEquipment(){}};click('Devices');click('Light bulb · 0');assert.equal(equipment.levels.light,5);click('+');assert.equal(equipment.levels.light,6);click('All off');assert(Object.values(equipment.levels).every(v=>v===0));click('AI chat');click('Enable voice');assert.equal(voiceAction,'enable');click('Talk');assert.equal(voiceAction,'talk');click('Read reply');assert.equal(voiceAction,'read');click('Stop voice');assert.equal(voiceAction,'stop');click('h');click('i');click('Space');click('1');click('Delete');click('2');click('Send');await new Promise(r=>setTimeout(r,0));assert.equal(asked,'hi 2');click('Floors');
+const equipment=createEquipmentState();window.cognitiveTwin={getEquipment:equipment.snapshot,controlEquipment:equipment.control,focusEquipment(){}};click('Devices');click('Light bulb · 0');assert.equal(equipment.levels.light,5);click('+');assert.equal(equipment.levels.light,6);click('All off');assert(Object.values(equipment.levels).every(v=>v===0));assert.equal(voiceAction,'warm');click('AI chat');
+assert.deepEqual(panel.children.filter(m=>m.userData.action).map(m=>m.userData.title),['Building controls']);
+const robot=panel.children.find(m=>m.isGroup).children[0].children[0];
+scene.updateMatrixWorld(true);
+controllers[0].position.copy(robot.getWorldPosition(new T.Vector3())).add(new T.Vector3(0,0,1).applyQuaternion(panel.quaternion));
+controllers[0].quaternion.copy(panel.quaternion);
+controllers[0].dispatchEvent({type:'selectstart'});
+await new Promise(r=>setTimeout(r,0));
+assert.equal(asked,'List the floors');assert.equal(voiceAction,'There are 12 doors.');
+click('Building controls');
 // Grip the panel, translate and rotate it without moving the building.
 scene.updateMatrixWorld(true);const panelAim=panel.children.find(m=>m.userData.title==='Floors').getWorldPosition(new T.Vector3());controllers[0].position.copy(panelAim).add(new T.Vector3(0,0,1).applyQuaternion(panel.quaternion));controllers[0].quaternion.copy(panel.quaternion);
 const modelBefore=root.parent.position.clone(),panelBefore=panel.position.clone();controllers[0].dispatchEvent({type:'squeezestart'});controllers[0].position.x+=.2;xr.step({getViewerPose:()=>({transform:{position:{x:0,y:1.6,z:0},orientation:{x:0,y:0,z:0,w:1}}})});assert(Math.abs(panel.position.x-panelBefore.x-.2)<1e-8,'controller grip moves panel');assert.deepEqual(root.parent.position.toArray(),modelBefore.toArray(),'panel grip leaves model stationary');
@@ -31,8 +41,6 @@ scene.updateMatrixWorld(true);tip=launcher.getWorldPosition(new T.Vector3());tic
 tip=null;tick();const before=panel.position.clone();head={x:.6,y:1.6,z:0};tick();assert.deepEqual(panel.position.toArray(),before.toArray(),'panel stationary by default');panel.children.find(m=>m.userData.title==='Move panel').userData.action();tick();assert(panel.position.distanceTo(before)>.01,'explicit move mode');
 panel.children.find(m=>m.userData.title==='Lock panel').userData.action();const pinned=panel.position.clone();head={x:1.2,y:1.6,z:0};tick();assert.deepEqual(panel.position.toArray(),pinned.toArray());
 scene.updateMatrixWorld(true);tip=panel.children.find(m=>m.userData.title==='Level 1').getWorldPosition(new T.Vector3());selected=null;tick();assert.equal(selected,1,'touch selects floor');tip=null;tick();
-// Touch an AI keyboard key after opening AI tab by controller.
-panel.children.find(m=>m.userData.title==='AI chat').userData.action();scene.updateMatrixWorld(true);tip=panel.children.find(m=>m.userData.title==='q').getWorldPosition(new T.Vector3());tick();tip=null;tick();panel.children.find(m=>m.userData.title==='Send').userData.action();await new Promise(r=>setTimeout(r,0));assert.equal(asked,'q','fingertip keyboard submits through shared assistant');
 up=false;tick();assert(!launcher.visible,'palm-down hides launcher');
 // Controller grips exercise the same transform engine as tracked-hand pinches.
 tip=null;session.inputSources=[];clock+=1000;

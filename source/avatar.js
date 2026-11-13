@@ -31,74 +31,100 @@ export function createAvatar(panel, voice, assistant) {
   const bubble=new T.Mesh(new T.PlaneGeometry(.48,.277),new T.MeshBasicMaterial({map:texture,transparent:true,side:T.DoubleSide,toneMapped:false}));
   bubble.position.set(-.09,-.218,0);
   group.add(bubble);
-  let submitted='', reply='', error='', busy=false, signature='', generation=0;
+  let messages=[], error='', busy=false, signature='', generation=0, asking=false;
   function reset() {
     generation++;
-    submitted=reply=error=signature='';
-    busy=false;
+    if(asking)assistant()?.stop();
+    asking=busy=false;
+    messages=[];
+    error=signature='';
+  }
+  function focus(active) {
+    group.position.set(active ? .09:-.41,-.06,.025);
+    group.scale.setScalar(active?1.28:1);
   }
   async function talk() {
     const v=voice();
-    if (!v||busy||v.state().busy||assistant()?.state().busy) return;
+    if(!v||busy||v.state().busy||v.state().recording||assistant()?.state().busy)return;
     const current=generation;
-    try {
-      error='';
-      if (!v.state().ready) await v.enable();
-      if (current!==generation||!v.state().ready) return;
-      await v.toggle(async text=>{
-        if (current!==generation) return;
-        submitted=text;
-        reply='';
-        busy=true;
-        try {
-          const api=assistant();
-          if (!api) throw Error('Open the app from index.html to connect to Groq.');
-          const answer=await api.ask(text,{speak:false});
-          if (current!==generation) return;
-          reply=answer;
-          await v.speak(answer);
-        } catch (e) {
-          if (current===generation) error=e.message;
-        } finally {
-          if (current===generation) busy=false;
-        }
-      });
-    } catch (e) {
-      if (current===generation) error=e.message;
-    }
+    error='';
+    if(!v.state().ready)await v.enable();
+    if(current!==generation||!v.state().ready)return;
+    await v.toggle(async text=>{
+      if(current!==generation)return;
+      messages.push({role:'user',text});
+      busy=true;
+      try {
+        const api=assistant();
+        if(!api)throw Error('Open the app from index.html to connect to Groq.');
+        asking=true;
+        const answer=await api.ask(text,{speak:false,onEquipment:confirmation=>{
+          if(current===generation)messages.push({role:'equipment',text:confirmation});
+        }});
+        if(current!==generation)return;
+        asking=false;
+        messages.push({role:'assistant',text:answer});
+        await v.speak(answer);
+      }catch(e){
+        if(current===generation)error=e.message;
+      }finally{
+        if(current===generation)asking=busy=false;
+      }
+    },{automatic:true});
   }
   function step(now) {
     robot.position.y=Math.sin(now*.002)*.008;
     ring.rotation.z=now*.0007;
     const state=voice()?.state();
-    const action=state?.recording?'Finish speaking':busy||state?.busy?'Please wait':'Trigger robot to talk';
-    const status=error||state?.status||'Voice assistant';
-    const next=JSON.stringify([submitted,reply,action,status]);
-    if (next===signature) return;
+    const status=error||(asking?'Thinking…':state?.recording?'Listening…':state?.busy||!state?.ready?state?.status:(state?.status?.startsWith('Ready')?'Trigger robot to talk':state?.status))||'Voice assistant';
+    const next=JSON.stringify([messages,status]);
+    if(next===signature)return;
     signature=next;
     context.clearRect(0,0,900,520);
-    context.fillStyle='#142a49';
-    context.beginPath();
-    context.roundRect(0,0,900,520,40);
-    context.fill();
-    function lines(value,y,size,color,limit) {
-      context.font=size+'px sans-serif';
+    function fill(x,y,w,h,color){
       context.fillStyle=color;
-      let row='';
-      const rows=[];
-      for(const word of value.split(/\s+/)) {
-        if(row&&context.measureText(row+' '+word).width>820) {rows.push(row);row='';}
-        row+=(row?' ':'')+word;
-      }
-      if(row) rows.push(row);
-      rows.slice(0,limit).forEach((line,index)=>context.fillText(line+(index===limit-1&&rows.length>limit?' …':''),40,y+index*(size+10)));
+      context.beginPath();
+      context.roundRect(x,y,w,h,24);
+      context.fill();
     }
-    lines('Building AI Assistant',60,40,'#78edff',1);
-    lines(action,110,31,'#ffffff',1);
-    lines(status,151,25,'#b4d4ef',1);
-    if(submitted) lines('You: '+submitted,205,31,'#b4d4ef',2);
-    lines(reply||'Try “Turn on the Room 110 air purifier” or “List the building floors.”',submitted?305:220,34,'#ffffff',submitted?4:5);
+    fill(0,0,900,520,'#102039');
+    context.font='bold 34px sans-serif';
+    context.fillStyle='#ecf6ff';
+    context.fillText('Building AI',32,48);
+    context.font='25px sans-serif';
+    context.fillStyle='#9de8ff';
+    context.fillText(status,32,87,836);
+    context.save();
+    context.beginPath();
+    context.rect(0,106,900,399);
+    context.clip();
+    context.font='30px sans-serif';
+    const conversation=messages.length?messages.slice(-10):[{role:'assistant',text:'Try “Turn on the Room 110 air purifier” or “List the building floors.”'}];
+    let bottom=500;
+    for(const message of conversation.slice().reverse()){
+      const content=message.text.replace(/[`*_#]/g,'');
+      const lines=[];
+      let row='';
+      for(const word of content.split(/\s+/)){
+        const next=row?row+' '+word:word;
+        if(row&&context.measureText(next).width>630){lines.push(row);row=word;}
+        else row=next;
+      }
+      if(row)lines.push(row);
+      const visible=lines.slice(0,message.role==='assistant'?6:3);
+      if(visible.length<lines.length)visible[visible.length-1]+=' …';
+      const width=Math.min(680,Math.max(150,...visible.map(line=>context.measureText(line).width+40)));
+      const height=visible.length*36+24;
+      const left=message.role==='user'?868-width:32;
+      const top=bottom-height;
+      if(top<106)break;
+      fill(left,top,width,height,message.role==='user'?'#1761bb':message.role==='equipment'?'#155747':'#29415d');
+      context.fillStyle='#ffffff';
+      visible.forEach((line,i)=>context.fillText(line,left+20,top+36+i*36,width-40));
+      bottom=top-12;
+    }
+    context.restore();
     texture.needsUpdate=true;
   }
-  return {targets:[...robot.children,bubble],talk,step,reset};
+  return {targets:[...robot.children,bubble],talk,step,reset,focus};
 }

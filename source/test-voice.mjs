@@ -13,9 +13,10 @@ await v.toggle();assert(v.state().recording);lastCapture.port.onmessage({data:ne
 await v.toggle();v.stop();assert(!v.state().recording);assert(!v.state().ready);assert.equal(tracksStopped,3);
 await v.enable();
 let avatarTranscript='';
-await v.toggle(text=>{avatarTranscript=text;});
+await v.toggle(text=>{avatarTranscript=text;},{automatic:true});
 lastCapture.port.onmessage({data:new Float32Array(24000).fill(.1)});
-await v.toggle();
+lastCapture.port.onmessage({data:new Float32Array(43200)});
+await new Promise(resolve=>setTimeout(resolve,0));
 assert.equal(avatarTranscript,'How many doors?');
 assert.equal(v.state().transcriptId,1,'avatar voice does not populate the manual chat draft');
 v.stop();
