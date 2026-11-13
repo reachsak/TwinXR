@@ -1,13 +1,9 @@
 Tabletop voice assistant
-Open index.html over HTTPS and enter Tabletop AR. Speech models warm up on entry.
-Point at the floating robot and pull the trigger once, then speak naturally.
-About 0.85 seconds of silence after speech submits the request automatically.
-Allow microphone access when prompted. Trigger again when ready for another turn.
-AI chat expands the floating conversation and hides the main control panel.
-Building controls returns to the floor, model, sensors and equipment panel.
-Blue bubbles show your transcript. Green bubbles report applied Room 110
-simulation settings. Assistant replies appear in gray and play aloud.
-Keep models/ and vendor/ together with index.html. Whisper tiny English and
-Kokoro q8 with af_heart are bundled and served from your deployment origin.
-The first visit still transfers assets from your host and initializes them.
-The Groq chat request still requires internet access.
+Deploy over HTTPS and open index.html. Keep models/ and vendor/ next to it.
+Whisper loads from your deployment and transcribes English speech on-device.
+Point at the robot and pull the trigger, then speak. A brief pause submits the
+request. The robot reads replies aloud through ElevenLabs Flash v2.5.
+Trigger the robot during playback to interrupt it and start a new request.
+AI chat shows your transcript, replies, and applied Room 110 simulated settings.
+Internet access is required for Groq and ElevenLabs. The ElevenLabs key in
+elevenlabs-config.mjs is visible to visitors who can access the deployment.

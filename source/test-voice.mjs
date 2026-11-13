@@ -21,3 +21,40 @@ assert.equal(avatarTranscript,'How many doors?');
 assert.equal(v.state().transcriptId,1,'avatar voice does not populate the manual chat draft');
 v.stop();
 console.log('PASS enable, capture cleanup, transcription review, no auto-send, stop/reset');
+
+let finishAudio;
+AC.prototype.decodeAudioData=async()=>({});
+AC.prototype.createBufferSource=()=>({
+ connect(){},
+ start(){finishAudio=()=>this.onended?.();},
+ stop(){}
+});
+let responseStatus=200;
+globalThis.fetch=async (url,options)=>{
+ assert(url.startsWith('https://api.elevenlabs.io/v1/text-to-speech/'));
+ assert.equal(JSON.parse(options.body).model_id,'eleven_flash_v2_5');
+ return new Response(new Uint8Array([0]),{status:responseStatus});
+};
+await v.enable();
+const first=v.speak('The purifier is on.');
+await new Promise(resolve=>setTimeout(resolve,0));
+assert(v.state().speaking);
+finishAudio();
+await first;
+assert(!v.state().busy&&!v.state().speaking);
+responseStatus=429;
+await v.speak('The purifier is off.');
+assert(!v.state().busy&&!v.state().speaking);
+assert.match(v.state().status,/429/);
+responseStatus=200;
+const interrupted=v.speak('The purifier is on.');
+await new Promise(resolve=>setTimeout(resolve,0));
+v.cancelTurn();
+await v.toggle(text=>{avatarTranscript=text;},{automatic:true});
+lastCapture.port.onmessage({data:new Float32Array(24000).fill(.1)});
+lastCapture.port.onmessage({data:new Float32Array(43200)});
+await interrupted;
+await new Promise(resolve=>setTimeout(resolve,0));
+assert.equal(avatarTranscript,'How many doors?');
+assert(!v.state().busy&&!v.state().recording);
+console.log('PASS ElevenLabs audio, API failure recovery, interrupt playback, next voice turn');

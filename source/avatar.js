@@ -31,11 +31,11 @@ export function createAvatar(panel, voice, assistant) {
   const bubble=new T.Mesh(new T.PlaneGeometry(.48,.277),new T.MeshBasicMaterial({map:texture,transparent:true,side:T.DoubleSide,toneMapped:false}));
   bubble.position.set(-.09,-.218,0);
   group.add(bubble);
-  let messages=[], error='', busy=false, signature='', generation=0, asking=false;
+  let messages=[], error='', signature='', generation=0, asking=false;
   function reset() {
     generation++;
     if(asking)assistant()?.stop();
-    asking=busy=false;
+    asking=false;
     messages=[];
     error=signature='';
   }
@@ -45,15 +45,16 @@ export function createAvatar(panel, voice, assistant) {
   }
   async function talk() {
     const v=voice();
-    if(!v||busy||v.state().busy||v.state().recording||assistant()?.state().busy)return;
-    const current=generation;
+    if(!v||v.state().recording||assistant()?.state().busy)return;
+    if(v.state().speaking)v.cancelTurn();
+    if(v.state().busy)return;
+    const current=++generation;
     error='';
     if(!v.state().ready)await v.enable();
     if(current!==generation||!v.state().ready)return;
     await v.toggle(async text=>{
       if(current!==generation)return;
       messages.push({role:'user',text});
-      busy=true;
       try {
         const api=assistant();
         if(!api)throw Error('Open the app from index.html to connect to Groq.');
@@ -68,7 +69,7 @@ export function createAvatar(panel, voice, assistant) {
       }catch(e){
         if(current===generation)error=e.message;
       }finally{
-        if(current===generation)asking=busy=false;
+        if(current===generation)asking=false;
       }
     },{automatic:true});
   }
@@ -76,7 +77,7 @@ export function createAvatar(panel, voice, assistant) {
     robot.position.y=Math.sin(now*.002)*.008;
     ring.rotation.z=now*.0007;
     const state=voice()?.state();
-    const status=error||(asking?'Thinking…':state?.recording?'Listening…':state?.busy||!state?.ready?state?.status:(state?.status?.startsWith('Ready')?'Trigger robot to talk':state?.status))||'Voice assistant';
+    const status=error||(asking?'Thinking…':state?.recording?'Listening…':state?.speaking?'Speaking · trigger to interrupt':state?.busy||!state?.ready?state?.status:(state?.status?.startsWith('Ready')?'Trigger robot to talk':state?.status))||'Voice assistant';
     const next=JSON.stringify([messages,status]);
     if(next===signature)return;
     signature=next;
