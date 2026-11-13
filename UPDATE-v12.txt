@@ -1,0 +1,10 @@
+CognitiveTwinXR v12
+Deploy the extracted contents with index.html at the HTTPS site root.
+In Tabletop AR, point at the floating assistant and pull the trigger.
+Allow microphone access and wait for local speech models on first use.
+Speak, then trigger the assistant again to finish. It submits the transcript
+to Groq and speaks the answer. The bubble previews longer replies. Open
+the AI chat tab for the full conversation.
+Aim at the robot or bubble and hold controller grip to move the panel
+and assistant together. Try “Turn on the Room 110 air purifier” or
+“List the building floors.” Equipment changes are simulated.
