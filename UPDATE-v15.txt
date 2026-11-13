@@ -1,0 +1,42 @@
+Room 110 telemetry in the browser and Tabletop AR
+
+Deploy the extracted directory over HTTPS. Start at index.html and open the
+existing AI assistant. In Tabletop AR use the floating robot as usual.
+
+Try:
+- Show me the live dashboard for Room 110.
+- Analyze after-hours HVAC. How much energy was used after 6 p.m.?
+- Plot occupancy and HVAC power for the after-hours scenario.
+- List the telemetry scenarios.
+- Compare CO2 and occupancy in the ventilation scenario.
+- Which intervals are missing in the missing telemetry scenario?
+- Close the telemetry dashboard.
+
+Scenarios in telemetry-data/ contain one demonstration day at 15-minute
+intervals in Central Time. Use the dashboard dropdown in the browser to
+select a scenario, or name the scenario in a voice request.
+
+after_hours: check evening HVAC energy against recorded vacancy
+ventilation: compare occupied periods and CO2
+humidity: look for sustained overnight humidity
+peak: find the pre-occupancy morning demand spike
+daylight: look for occupied periods suitable for daylight controls
+particulate: review a short particulate excursion and potential sources
+comfort: locate afternoon overheating during occupancy
+gaps: distinguish missing intervals and missing CO2 values from zero
+flatline: flag an unchanged temperature channel for verification
+efficient: compare the occupied-only HVAC schedule against after-hours HVAC
+weekend: find daytime HVAC usage on a day with zero recorded occupants
+cycling: inspect large power changes between adjacent samples
+
+To supply actual live data, open the dashboard in the browser, enter the
+HTTPS JSON endpoint and select Apply feed. The endpoint must be same-origin
+or allow the deployment origin via CORS. TwinXR polls every five seconds and
+marks readings older than 60 seconds stale. Example response shape:
+{"timestamp":"2026-11-12T20:00:00Z","values":{"occupancy":5,"temperature":22.1,"co2":680,"humidity":48,"power":2.3,"energy":0.575,"lux":540,"pm25":7}}
+
+Timestamp is ISO 8601. Energy is interval kWh, not cumulative meter kWh.
+Missing values display as unavailable. Clear the feed URL and apply to
+return to the demo. Feed selection lasts until reload. Historical analysis
+uses the included CSVs. Connecting a telemetry feed does not connect
+physical actuators. Equipment controls use the existing app state.

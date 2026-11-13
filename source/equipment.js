@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {createEquipmentState,deviceNames,ROOM_GUID} from '../equipment-state.mjs';
 export function installEquipment({root,rooms,invalidate,getFloor,focusRoom,isXR}){
- const room=rooms.get(ROOM_GUID),group=new T.Group();group.name='Room 110 simulated equipment';root.add(group);
+ const room=rooms.get(ROOM_GUID),group=new T.Group();group.name='Room 110 equipment';root.add(group);
  const ui=document.getElementById('equipment-panel'),launch=document.getElementById('equipment-open');
  const state=createEquipmentState(!!room,changed);let demoOpen=false,lastTime=0;
  const readings={temperature:24.5,lux:80,pm25:28,humidity:36};
@@ -79,5 +79,5 @@ export function installEquipment({root,rooms,invalidate,getFloor,focusRoom,isXR}
   if(group.visible&&Object.values(levels).some(Boolean))invalidate();
  }
  changed();
- return {focus,choose,picks,step,get:()=>({...state.snapshot(),demoReadings:{...readings,source:'equipment simulation',note:'Illustrative response, not measured performance or real telemetry.'}}),control:a=>{const result=state.control(a);if(!demoOpen||getFloor()!==room.el.floor)focus();return {...result,demoReadings:{...readings}};}};
+ return {focus,choose,picks,step,get:()=>({...state.snapshot(),demoReadings:{...readings,source:'Room 110 demo feed',note:'Illustrative response, not measured performance or real telemetry.'}}),control:a=>{const result=state.control(a);if(!demoOpen||getFloor()!==room.el.floor)focus();return {...result,demoReadings:{...readings}};}};
 }

@@ -19,6 +19,25 @@ export function installTabletop({equipment,renderer,scene,root,sky,ground,grid,c
  function voice(){try{return window.parent.CognitiveVoice;}catch{return null;}}
  function assistant(){try{return window.parent.CognitiveAssistant;}catch{return null;}}
  const avatar=createAvatar(panel,voice,assistant);
+ const dashboard=new T.Group();
+ dashboard.position.set(.76,-.30,0);
+ panel.add(dashboard);
+ dashboard.visible=false;
+ let dashboardRevision=-1;
+ function telemetry(){try{return window.parent.CognitiveTelemetry;}catch{return null;}}
+ function updateDashboard(){
+  const data=telemetry()?.state();
+  dashboard.visible=Boolean(data?.visible);
+  if(!dashboard.visible||dashboardRevision===data.revision)return;
+  dashboardRevision=data.revision;
+  if(!dashboard.children.length){
+   const map=new T.CanvasTexture(data.canvas);
+   map.colorSpace=T.SRGBColorSpace;
+   dashboard.add(new T.Mesh(new T.PlaneGeometry(.78,.488),new T.MeshBasicMaterial({map,side:T.DoubleSide,toneMapped:false})));
+  }
+  dashboard.children[0].material.map.needsUpdate=true;
+ }
+
  function avatarHit(){return menuOpen&&ray.intersectObjects(avatar.targets,false)[0];}
  let headPosition=new T.Vector3(),headOrientation=new T.Quaternion();
  function rounded(c,x,y,w,h,r){c.beginPath();c.roundRect(x,y,w,h,r);c.fill();}
@@ -46,12 +65,12 @@ export function installTabletop({equipment,renderer,scene,root,sky,ground,grid,c
    card('1 hand: move / turn · 2 hands: scale / turn',null,0,-.59,.572,.04);
    card('Tabletop size · 85 cm',()=>pivot.scale.setScalar(.85/span),0,-.522,.572,.055);
   }else if(tab==='data'){
-   card('Simulated room readings',null,0,-.132,.56,.047,{muted:true});
+   card('Room readings',null,0,-.132,.56,.047,{muted:true});
    Array.from(heatmap.options).forEach((o,i)=>card(o.textContent,()=>{heatmap.selectedIndex=i;heatmap.dispatchEvent(new Event('change'));renderPanel();},0,-.201-i*.07,.572,.059,{active:heatmap.selectedIndex===i}));
   }
   if(tab==='equipment'){
    const eq=window.cognitiveTwin?.getEquipment();
-   card('Room 110 · SIMULATED',()=>window.cognitiveTwin?.focusEquipment(),0,-.14,.57,.055,{subtitle:'Tap to show Lab1'});
+   card('Room 110',()=>window.cognitiveTwin?.focusEquipment(),0,-.14,.57,.055,{subtitle:'Tap to show Lab1'});
    if(eq?.available)eq.devices.forEach((d,i)=>{const y=-.222-i*.073;
     card((selectedDevice===d.id?'● ':'')+d.name+' · '+d.level,()=>{window.cognitiveTwin.controlEquipment({room:'110',device:d.id,action:d.on?'off':'on'});renderPanel();},-.08,y,.40,.06,{active:d.on});
     card('−',()=>{window.cognitiveTwin.controlEquipment({room:'110',device:d.id,action:'set',level:Math.max(0,d.level-1)});renderPanel();},.163,y,.065,.06);
@@ -71,10 +90,10 @@ export function installTabletop({equipment,renderer,scene,root,sky,ground,grid,c
  function cast(controller){controller.updateWorldMatrix(true,false);ray.ray.origin.setFromMatrixPosition(controller.matrixWorld);ray.ray.direction.set(0,0,-1).transformDirection(controller.matrixWorld);panel.updateMatrixWorld(true);return ray.intersectObjects(targets(),false)[0];}
  function start(input){if(!session||touchLatch||performance.now()-lastTouch<450)return;const h=cast(input.c);if(h){h.object.userData.action();return;}if(avatarHit()){avatar.talk();return;}const device=ray.intersectObjects(devicePicks(),false)[0];if(device){openDevice(device.object.userData.equipment);return;}if(placing&&reticle.visible){pivot.position.setFromMatrixPosition(reticle.matrix);placing=false;reticle.visible=false;renderPanel();return;}if(panelHit(input)){beginPanelGrab(input);return;}if(ray.intersectObject(root,true).length)beginGrab(input);}
  for(let i=0;i<2;i++){const c=renderer.xr.getController(i),input={c,source:null};scene.add(c);const line=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(),new T.Vector3(0,0,-3)]),new T.LineBasicMaterial({color:0x4de6c5}));c.add(line);c.addEventListener('connected',e=>input.source=e.data);c.addEventListener('disconnected',()=>{input.source=null;if(drag?.input===input)drag=null;endGrab(input);});c.addEventListener('selectstart',()=>start(input));c.addEventListener('selectend',()=>{if(drag?.input===input)drag=null;endGrab(input);});c.addEventListener('squeezestart',()=>{if(session){if(panelHit(input))beginPanelGrab(input);else beginGrab(input);}});c.addEventListener('squeezeend',()=>{if(drag?.input===input)drag=null;endGrab(input);});inputs.push(input);}
- function reset(){avatar.reset();voice()?.cancelTurn();hitSource?.cancel();hitSource=null;drag=null;grabs.clear();gesture=null;panelGrab=null;placing=false;reticle.visible=false;panel.visible=false;menuOpen=false;follow=false;wristButton.visible=false;palmUp=false;touchLatch=false;lastTouch=-Infinity;scene.add(root);root.position.copy(saved.rootPosition);root.quaternion.copy(saved.rootQuaternion);root.scale.copy(saved.rootScale);pivot.position.set(0,0,0);pivot.rotation.set(0,0,0);pivot.scale.setScalar(1);sky.visible=saved.sky;ground.visible=saved.ground;grid.visible=saved.grid;controls.enabled=saved.controls;getCamera().position.copy(saved.cameraPosition);getCamera().quaternion.copy(saved.cameraQuaternion);renderer.setClearColor(saved.color,saved.alpha);renderer.shadowMap.enabled=saved.shadows;session=null;restore();button.textContent='Tabletop AR';button.disabled=false;}
+ function reset(){avatar.reset();telemetry()?.close();voice()?.cancelTurn();hitSource?.cancel();hitSource=null;drag=null;grabs.clear();gesture=null;panelGrab=null;placing=false;reticle.visible=false;panel.visible=false;menuOpen=false;follow=false;wristButton.visible=false;palmUp=false;touchLatch=false;lastTouch=-Infinity;scene.add(root);root.position.copy(saved.rootPosition);root.quaternion.copy(saved.rootQuaternion);root.scale.copy(saved.rootScale);pivot.position.set(0,0,0);pivot.rotation.set(0,0,0);pivot.scale.setScalar(1);sky.visible=saved.sky;ground.visible=saved.ground;grid.visible=saved.grid;controls.enabled=saved.controls;getCamera().position.copy(saved.cameraPosition);getCamera().quaternion.copy(saved.cameraQuaternion);renderer.setClearColor(saved.color,saved.alpha);renderer.shadowMap.enabled=saved.shadows;session=null;restore();button.textContent='Tabletop AR';button.disabled=false;}
  button.onclick=async()=>{if(session){await session.end();return;}button.disabled=true;try{const s=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['local-floor'],optionalFeatures:['hand-tracking','hit-test']});session=s;saved={rootPosition:root.position.clone(),rootQuaternion:root.quaternion.clone(),rootScale:root.scale.clone(),sky:sky.visible,ground:ground.visible,grid:grid.visible,controls:controls.enabled,cameraPosition:getCamera().position.clone(),cameraQuaternion:getCamera().quaternion.clone(),color:renderer.getClearColor(new T.Color()),alpha:renderer.getClearAlpha(),shadows:renderer.shadowMap.enabled};prepare();pivot.add(root);pivot.scale.setScalar(.85/span);sky.visible=ground.visible=grid.visible=false;controls.enabled=false;renderer.shadowMap.enabled=false;renderer.setClearColor(0,0);getCamera().position.set(0,0,0);getCamera().quaternion.identity();renderer.xr.setReferenceSpaceType('local-floor');s.addEventListener('end',reset,{once:true});await renderer.xr.setSession(s);first=true;tab='floors';menuOpen=true;follow=false;movingPanel=false;panelPlaced=false;snapPanel=false;panel.visible=true;renderPanel();voice()?.prewarm();button.textContent='Exit AR';button.disabled=false;try{const viewer=await s.requestReferenceSpace('viewer');hitSource=await s.requestHitTestSource({space:viewer});}catch{} }catch(e){if(session){await session.end();}button.disabled=false;button.title=e.message;document.getElementById('notice').hidden=false;document.getElementById('notice').textContent='AR could not start: '+e.message;}};
  if(navigator.xr)navigator.xr.isSessionSupported('immersive-ar').then(ok=>{button.disabled=!ok;}).catch(()=>{});
- function step(frame){if(!session||!frame)return;avatar.step(performance.now());if(tab==='equipment'){const revision=window.cognitiveTwin?.getEquipment()?.revision;if(revision!==equipmentRevision){equipmentRevision=revision;renderPanel();}}const ref=renderer.xr.getReferenceSpace(),pose=frame.getViewerPose(ref);if(first&&pose){const p=pose.transform.position,q=pose.transform.orientation;const dir=new T.Vector3(0,0,-1).applyQuaternion(new T.Quaternion(q.x,q.y,q.z,q.w));dir.y=0;dir.normalize();pivot.position.set(p.x+dir.x*1.35,p.y-.9,p.z+dir.z*1.35);pivot.rotation.y=Math.atan2(dir.x,dir.z)+Math.PI+.65;const right=new T.Vector3(-dir.z,0,dir.x);panel.position.copy(pivot.position).addScaledVector(right,.85);panel.position.y=p.y+.1;panel.lookAt(p.x,panel.position.y,p.z);panelPlaced=true;first=false;}
+ function step(frame){if(!session||!frame)return;avatar.step(performance.now());updateDashboard();if(tab==='equipment'){const revision=window.cognitiveTwin?.getEquipment()?.revision;if(revision!==equipmentRevision){equipmentRevision=revision;renderPanel();}}const ref=renderer.xr.getReferenceSpace(),pose=frame.getViewerPose(ref);if(first&&pose){const p=pose.transform.position,q=pose.transform.orientation;const dir=new T.Vector3(0,0,-1).applyQuaternion(new T.Quaternion(q.x,q.y,q.z,q.w));dir.y=0;dir.normalize();pivot.position.set(p.x+dir.x*1.35,p.y-.9,p.z+dir.z*1.35);pivot.rotation.y=Math.atan2(dir.x,dir.z)+Math.PI+.65;const right=new T.Vector3(-dir.z,0,dir.x);panel.position.copy(pivot.position).addScaledVector(right,.85);panel.position.y=p.y+.1;panel.lookAt(p.x,panel.position.y,p.z);panelPlaced=true;first=false;}
  if(drag&&drag.input.source?.targetRaySpace&&frame.getPose(drag.input.source.targetRaySpace,ref)){const p=drag.input.c.getWorldPosition(new T.Vector3());pivot.position.copy(drag.position).add(p.sub(drag.origin));}
  updateHandMenu(frame,ref,pose);updatePinches(frame,ref);updateGrabs();updatePanelGrab();
  const hovered=new Set();for(const input of inputs){if(input.source){const h=cast(input.c);if(h)hovered.add(h.object);}}for(const m of targets()){const h=hovered.has(m);if(m.userData.hover!==h){m.userData.hover=h;m.userData.draw(h);}}
